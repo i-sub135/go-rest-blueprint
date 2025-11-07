@@ -1,0 +1,312 @@
+# Go REST API Blueprint
+
+[![Go Version](https://img.shields.io/badge/go-1.23+-blue.svg)](https://golang.org)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+A modern, production-ready REST API blueprint built with Go, featuring clean architecture, comprehensive logging, health checks, and PostgreSQL integration.
+
+## 🚀 Features
+
+- **Clean Architecture** - Organized into public/private feature separation
+- **PostgreSQL Integration** - GORM with connection pooling and health checks
+- **Advanced Logging** - Structured JSON logging with Zerolog
+- **Configuration Management** - YAML + Environment variables with Koanf v2
+- **Health Monitoring** - Database health checks with proper timeout handling
+- **Hot Reload** - Development workflow with file watching
+- **Comprehensive Testing** - Unit tests with proper isolation
+- **Production Ready** - Optimized for deployment and scaling
+
+## 📁 Project Structure
+
+```
+├── main.go                     # Application entry point
+├── config.yaml                 # Configuration file
+├── version                     # Version file (auto-read)
+├── go.mod                      # Go module dependencies
+│
+├── source/
+│   ├── config/                 # Configuration management
+│   │   ├── config.go          # Config loader with Koanf v2
+│   │   └── struct_cfg.go      # Configuration structures
+│   │
+│   ├── feature/               # Business features
+│   │   ├── public/            # External-facing features
+│   │   │   └── healtcheck/    # Health check endpoints
+│   │   └── private/           # Internal business logic
+│   │
+│   ├── pkg/                   # Shared packages
+│   │   ├── db/                # Database connection & management
+│   │   └── logger/            # Structured logging utilities
+│   │
+│   └── service/               # Infrastructure services
+│       ├── route.go           # Route mounting and organization
+│       ├── middleware/        # Custom middleware
+│       ├── constant/          # Application constants
+│       └── share/             # Shared service utilities
+│
+└── test/                      # Test files
+    └── source/config/         # Configuration tests
+```
+
+## 🛠️ Technology Stack
+
+- **Framework**: [Gin](https://github.com/gin-gonic/gin) - High-performance HTTP web framework
+- **Database**: PostgreSQL with [GORM](https://gorm.io/) ORM
+- **Logging**: [Zerolog](https://github.com/rs/zerolog) - Structured, high-performance logging
+- **Configuration**: [Koanf v2](https://github.com/knadh/koanf) - Configuration management
+- **Testing**: Go native testing with comprehensive coverage
+
+## ⚡ Quick Start
+
+### Prerequisites
+
+- Go 1.23+ installed
+- PostgreSQL server running
+- Git
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/i-sub135/go-rest-blueprint.git
+   cd go-rest-blueprint
+   ```
+
+2. **Install dependencies**
+   ```bash
+   go mod download
+   ```
+
+3. **Configure database**
+   ```bash
+   # Update config.yaml with your PostgreSQL connection
+   # Or use environment variables
+   export DB_DSN="host=localhost user=your_user password=your_pass dbname=your_db port=5432 sslmode=disable"
+   ```
+
+4. **Run the application**
+   ```bash
+   go run main.go
+   ```
+
+The API will be available at `http://localhost:8081`
+
+## 🔧 Configuration
+
+Configuration is managed through `config.yaml` with environment variable overrides:
+
+```yaml
+app:
+  name: "github.com/i-sub135/go-rest-blueprint"
+  mode: release                    # debug/release
+  port: 8081
+db:
+  dsn: host=localhost user=postgres password=postgres dbname=myapp port=5432 sslmode=disable TimeZone=Asia/Jakarta
+log:
+  level: info                      # debug/info/warn/error
+  pretty_console: false           # true for development
+```
+
+### Environment Variables
+
+Environment variables automatically override config file values:
+
+```bash
+export APP_MODE=debug
+export APP_PORT=8080
+export DB_DSN="your_database_connection_string"
+export LOG_LEVEL=debug
+export LOG_PRETTY_CONSOLE=true
+```
+
+## 🏥 Health Checks
+
+The application includes comprehensive health monitoring:
+
+### Endpoints
+
+- **`GET /health`** - Database connectivity and application status
+
+### Response Format
+
+**Healthy Response (200 OK):**
+```json
+{
+  "status": "OK",
+  "message": "Database connection healthy", 
+  "version": "1.0.0-beta",
+  "timestamp": "2025-11-07T14:30:00Z"
+}
+```
+
+**Unhealthy Response (502 Bad Gateway):**
+```json
+{
+  "status": "FAIL",
+  "error": "connection timeout",
+  "version": "1.0.0-beta", 
+  "time": "2025-11-07T14:30:00Z"
+}
+```
+
+## 🔍 API Endpoints
+
+### Health Check
+- `GET /health` - Application and database health status
+
+### API Routes
+- `GET /api/v1/...` - API endpoints (mounted via router system)
+
+## 🧪 Testing
+
+Run the test suite:
+
+```bash
+# Run all tests
+go test ./...
+
+# Run with coverage
+go test -cover ./...
+
+# Run specific package tests
+go test ./test/source/config/...
+
+# Verbose test output
+go test -v ./...
+```
+
+### Test Coverage
+
+- Configuration loading and validation
+- Database connection health checks
+- Environment variable overrides
+- Default value handling
+
+## 🚦 Development Workflow
+
+### Hot Reload
+
+For development with automatic reloading:
+
+```bash
+# Using entr (recommended)
+find . -name "*.go" | entr -r go run main.go
+
+# Using Air (alternative)
+go install github.com/cosmtrek/air@latest
+air
+```
+
+### Building
+
+```bash
+# Build for current platform
+go build -o app
+
+# Build for Linux
+GOOS=linux GOARCH=amd64 go build -o app-linux
+
+# Build with optimizations
+go build -ldflags="-w -s" -o app
+```
+
+## 🏗️ Architecture Principles
+
+### Clean Architecture
+
+- **Public Features** (`source/feature/public/`) - External-facing functionality
+- **Private Features** (`source/feature/private/`) - Internal business logic  
+- **Infrastructure** (`source/pkg/`, `source/service/`) - Shared utilities and services
+
+### Configuration Management
+
+- **Layered Loading** - File → Environment → Defaults
+- **Type Safety** - Structured configuration with validation
+- **Version Management** - Automatic version reading from file
+
+### Logging Strategy
+
+- **Structured Logging** - JSON format for production
+- **Contextual Information** - Request tracing and correlation
+- **Performance Optimized** - High-performance Zerolog implementation
+- **Development Friendly** - Pretty console output for debugging
+
+## 🐳 Deployment
+
+### Docker
+
+```dockerfile
+FROM golang:1.23-alpine AS builder
+WORKDIR /app
+COPY . .
+RUN go mod download
+RUN go build -o main
+
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /app/main .
+COPY --from=builder /app/config.yaml .
+COPY --from=builder /app/version .
+CMD ["./main"]
+```
+
+### Environment Setup
+
+```bash
+# Production environment variables
+export APP_MODE=release
+export LOG_LEVEL=info
+export LOG_PRETTY_CONSOLE=false
+export DB_DSN="your_production_database_url"
+```
+
+## 📊 Monitoring & Observability
+
+### Structured Logging
+
+All logs include:
+- **Timestamp** - RFC3339 format
+- **Level** - debug/info/warn/error
+- **Caller** - Full file path and line number
+- **App Context** - Application name and version
+- **Request Context** - HTTP method, path, status, latency
+
+### Health Monitoring
+
+- Database connection with timeout (5s)
+- Connection pool health
+- Application version tracking
+- Graceful degradation on failures
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Follow Go coding standards
+- Add tests for new features
+- Update documentation as needed
+- Use meaningful commit messages
+- Ensure all tests pass
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔗 Links
+
+- [Go Documentation](https://golang.org/doc/)
+- [Gin Framework](https://gin-gonic.com/)
+- [GORM Documentation](https://gorm.io/docs/)
+- [Zerolog Documentation](https://github.com/rs/zerolog)
+- [Koanf Configuration](https://github.com/knadh/koanf)
+
+---
+
+**Built with ❤️ by [i-sub135](https://github.com/i-sub135)**
