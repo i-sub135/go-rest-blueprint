@@ -2,9 +2,10 @@ package config
 
 type Config struct {
 	App struct {
-		Name string `koanf:"name"`
-		Mode string `koanf:"mode"`
-		Port int    `koanf:"port"`
+		Name    string `koanf:"name"`
+		Mode    string `koanf:"mode"`
+		Port    int    `koanf:"port"`
+		Version string `koanf:"version"`
 	} `koanf:"app"`
 	DB struct {
 		DSN string `koanf:"dsn"`

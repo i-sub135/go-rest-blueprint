@@ -10,6 +10,7 @@ import (
 	"github.com/i-sub135/go-rest-blueprint/source/feature/public/healtcheck"
 	"github.com/i-sub135/go-rest-blueprint/source/pkg/db"
 	"github.com/i-sub135/go-rest-blueprint/source/pkg/logger"
+	"github.com/i-sub135/go-rest-blueprint/source/service"
 )
 
 func main() {
@@ -31,8 +32,8 @@ func main() {
 	}
 
 	// initial gin
+	gin.SetMode(cfg.App.Mode) // Set mode first
 	r := gin.New()
-	gin.SetMode(cfg.App.Mode)
 	r.Use(logger.GinZLogger())
 	r.Use(gin.Recovery())
 
@@ -40,16 +41,21 @@ func main() {
 
 	r.GET("/health", healthcheck.HealtCheck)
 
+	// Mounting routers
+	route_api_v1 := r.Group("/api/v1")
+	mounthRoute := service.NewRouters(database)
+	mounthRoute.MountRouters(route_api_v1)
+
 	svc := &http.Server{
 		Addr:           fmt.Sprintf(":%v", cfg.App.Port),
 		Handler:        r,
-		ReadTimeout:    5 * time.Second,
+		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		IdleTimeout:    120 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	logger.Info().Msgf("listening on port %v", cfg.App.Port)
+	logger.Info().Str("mode", cfg.App.Mode).Msgf("listening on port %v", cfg.App.Port)
 	if err := svc.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		logger.Error().Err(err).Msg("server error")
 	}

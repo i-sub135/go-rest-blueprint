@@ -31,9 +31,9 @@ func Init(prettyConsole bool) {
 
 	if prettyConsole {
 		out := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
-		Log = zerolog.New(out).Level(lvl).With().Timestamp().Str("app", config.GetConfig().App.Name).Logger()
+		Log = zerolog.New(out).Level(lvl).With().Timestamp().Str("app", config.GetConfig().App.Name).Str("app_version", config.GetConfig().App.Version).Logger()
 	} else {
-		Log = zerolog.New(os.Stdout).Level(lvl).With().Timestamp().Str("app", config.GetConfig().App.Name).Logger()
+		Log = zerolog.New(os.Stdout).Level(lvl).With().Timestamp().Str("app", config.GetConfig().App.Name).Str("app_version", config.GetConfig().App.Version).Logger()
 	}
 }
 

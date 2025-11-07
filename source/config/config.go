@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"os"
 	"strings"
 
 	"github.com/knadh/koanf/parsers/yaml"
@@ -9,6 +10,15 @@ import (
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 )
+
+// readVersionFile reads version from a file, returns "unknown" if not found
+func readVersionFile() string {
+	content, err := os.ReadFile("version")
+	if err != nil {
+		return "unknown"
+	}
+	return strings.TrimSpace(string(content))
+}
 
 var k = koanf.New(".")
 var cfg Config
@@ -40,6 +50,11 @@ func LoadConfig(path string) error {
 	}
 	if k.Int("app.port") == 0 {
 		k.Set("app.port", 8080)
+	}
+	// Read version from file and set if not provided via config
+	if k.String("app.version") == "" {
+		version := readVersionFile()
+		k.Set("app.version", version)
 	}
 	if k.String("log.level") == "" {
 		k.Set("log.level", "debug")
