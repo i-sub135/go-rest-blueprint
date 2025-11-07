@@ -1,7 +1,9 @@
 app:
-  env: local
+  name: "github.com/i-sub135/go-rest-blueprint"
+  mode: release
   port: 8081
 db:
-  dsn: app.db
+  dsn: host=localhost user=tracking_user password=tracking_pass dbname=tracking_db port=5432 sslmode=disable TimeZone=Asia/Jakarta
 log:
-  level: debug
+  level: info
+  pretty_console: false
