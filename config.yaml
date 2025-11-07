@@ -1,0 +1,7 @@
+app:
+  env: local
+  port: 8081
+db:
+  dsn: app.db
+log:
+  level: debug
