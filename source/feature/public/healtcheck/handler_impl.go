@@ -2,7 +2,7 @@ package healtcheck
 
 import (
 	"github.com/gin-gonic/gin"
-	httpresputils "github.com/i-sub135/go-rest-blueprint/source/service/share/glob_utils/http_resp_utils"
+	httpresputils "github.com/i-sub135/go-rest-blueprint/source/common/glob_utils/http_resp_utils"
 )
 
 func (h *Handler) HealtCheck(c *gin.Context) {

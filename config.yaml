@@ -3,7 +3,7 @@ app:
   mode: release
   port: 8999
 db:
-  dsn: host=localhost user=tracking_user password=tracking_pass dbname=tracking_db port=5432 sslmode=disable TimeZone=Asia/Jakarta
+  dsn: host=localhost user=tracking_user password=tracking_pass dbname=go_blueprint port=5432 sslmode=disable TimeZone=Asia/Jakarta
 log:
   level: info
   pretty_console: false

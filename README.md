@@ -3,11 +3,12 @@
 [![Go Version](https://img.shields.io/badge/go-1.23+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-A modern, production-ready REST API blueprint built with Go, featuring clean architecture, comprehensive logging, health checks, and PostgreSQL integration.
+A modern, production-ready REST API blueprint built with Go, featuring clean architecture, isolated feature development, comprehensive logging, health checks, and PostgreSQL integration with shared model and repository patterns.
 
 ## 🚀 Features
 
-- **Clean Architecture** - Organized into public/private feature separation
+- **Feature-Based Architecture** - Each endpoint is an isolated feature with complete self-containment
+- **Shared Resource Management** - Models and repositories shared across features via duck typing
 - **PostgreSQL Integration** - GORM with connection pooling and health checks
 - **Advanced Logging** - Structured JSON logging with Zerolog
 - **Configuration Management** - YAML + Environment variables with Koanf v2
@@ -29,23 +30,82 @@ A modern, production-ready REST API blueprint built with Go, featuring clean arc
 │   │   ├── config.go          # Config loader with Koanf v2
 │   │   └── struct_cfg.go      # Configuration structures
 │   │
-│   ├── feature/               # Business features
+│   ├── feature/               # Business features (1 endpoint = 1 feature)
 │   │   ├── public/            # External-facing features
-│   │   │   └── healtcheck/    # Health check endpoints
-│   │   └── private/           # Internal business logic
+│   │   │   ├── healtcheck/    # Health check endpoints
+│   │   │   ├── user_create/   # POST /users endpoint
+│   │   │   ├── user_update/   # PUT /users/:id endpoint
+│   │   │   └── ...            # Other public endpoints
+│   │   ├── private/           # Internal business logic features
+│   │   └── doc.go             # Feature architecture documentation
 │   │
-│   ├── pkg/                   # Shared packages
+│   ├── common/                # Shared resources across features
+│   │   ├── model/             # Shared GORM models and entities
+│   │   ├── repository/        # Shared repository implementations
+│   │   └── utils/             # Common utility functions and helpers
+│   │       └── http_resp_utils/  # HTTP response utilities
+│   │
+│   ├── pkg/                   # Infrastructure packages
 │   │   ├── db/                # Database connection & management
 │   │   └── logger/            # Structured logging utilities
 │   │
 │   └── service/               # Infrastructure services
 │       ├── route.go           # Route mounting and organization
 │       ├── middleware/        # Custom middleware
-│       ├── constant/          # Application constants
-│       └── share/             # Shared service utilities
+│       └── constant/          # Application constants
 │
 └── test/                      # Test files
     └── source/config/         # Configuration tests
+```
+
+## 🏗️ Architecture Principles
+
+### Feature Isolation Pattern
+
+Each endpoint is treated as a complete, isolated feature:
+
+```
+feature/public/user_create/     # POST /users endpoint
+├── model.go                    # Request/Response models specific to this endpoint
+├── repository.go               # Repository interface contract
+├── repository_impl.go          # Repository implementation
+├── handler.go                  # HTTP handler logic
+└── utils.go                    # Utilities specific to this feature
+```
+
+**Key Principles:**
+- **1 Endpoint = 1 Feature = 1 Folder** - Complete isolation
+- **Self-Contained** - Everything needed for the endpoint exists in the feature folder
+- **Shared When Needed** - Only move to `common/` when used by multiple features
+
+### Duck Typing & Repository Pattern
+
+- **Interface Contracts** - Each feature defines its own repository interface
+- **Shared Implementation** - Common repository implementations in `common/repository/`
+- **Duck Typing** - Go's interface satisfaction enables flexible dependency injection
+- **Minimal Exposure** - Features only see the methods they need
+
+### Example Implementation
+
+```go
+// feature/public/user_create/repository.go
+type Repository interface {
+    // Shared methods
+    Create(ctx context.Context, user *commonmodel.User) error
+    
+    // Feature-specific methods
+    ValidateEmailUnique(ctx context.Context, email string) error
+}
+
+// feature/public/user_create/repository_impl.go
+type repositoryImpl struct {
+    *commonrepository.UserRepo // Embedded shared repo
+}
+
+// Duck typing automatically satisfies the interface
+func NewRepository(userRepo *commonrepository.UserRepo) Repository {
+    return &repositoryImpl{UserRepo: userRepo}
+}
 ```
 
 ## 🛠️ Technology Stack
@@ -181,8 +241,19 @@ go test -v ./...
 - Database connection health checks
 - Environment variable overrides
 - Default value handling
+- Feature isolation testing
+- Repository interface compliance
 
 ## 🚦 Development Workflow
+
+### Adding New Features
+
+1. **Create feature folder** in `feature/public/` or `feature/private/`
+2. **Define models** specific to the feature
+3. **Create repository interface** with required methods
+4. **Implement repository** using shared repos + feature-specific logic
+5. **Build handler** with business logic
+6. **Register routes** via service layer
 
 ### Hot Reload
 
@@ -210,21 +281,28 @@ GOOS=linux GOARCH=amd64 go build -o app-linux
 go build -ldflags="-w -s" -o app
 ```
 
-## 🏗️ Architecture Principles
+## 📦 Common Package Usage
 
-### Clean Architecture
+### When to Move to Common
 
-- **Public Features** (`source/feature/public/`) - External-facing functionality
-- **Private Features** (`source/feature/private/`) - Internal business logic  
-- **Infrastructure** (`source/pkg/`, `source/service/`) - Shared utilities and services
+Move components to `common/` when:
+- **Model** is used by 2+ features
+- **Repository method** is needed by multiple features
+- **Utility function** is reused across features
 
-### Configuration Management
+### Import Examples
 
-- **Layered Loading** - File → Environment → Defaults
-- **Type Safety** - Structured configuration with validation
-- **Version Management** - Automatic version reading from file
+```go
+// Feature-specific imports
+import "github.com/i-sub135/go-rest-blueprint/source/feature/public/user_create"
 
-### Logging Strategy
+// Common imports
+import "github.com/i-sub135/go-rest-blueprint/source/common/model"
+import "github.com/i-sub135/go-rest-blueprint/source/common/repository"
+import "github.com/i-sub135/go-rest-blueprint/source/common/utils/http_resp_utils"
+```
+
+## 🔍 Logging Strategy
 
 - **Structured Logging** - JSON format for production
 - **Contextual Information** - Request tracing and correlation
@@ -289,7 +367,8 @@ All logs include:
 
 ### Development Guidelines
 
-- Follow Go coding standards
+- Follow the feature isolation pattern
+- Use shared resources only when reused
 - Add tests for new features
 - Update documentation as needed
 - Use meaningful commit messages
