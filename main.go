@@ -11,6 +11,7 @@ import (
 	"github.com/i-sub135/go-rest-blueprint/source/pkg/db"
 	"github.com/i-sub135/go-rest-blueprint/source/pkg/logger"
 	"github.com/i-sub135/go-rest-blueprint/source/service"
+	"github.com/i-sub135/go-rest-blueprint/source/service/middleware"
 )
 
 func main() {
@@ -34,6 +35,7 @@ func main() {
 	// initial gin
 	gin.SetMode(cfg.App.Mode) // Set mode first
 	r := gin.New()
+	r.Use(middleware.RequestIDMiddleware())
 	r.Use(logger.GinZLogger())
 	r.Use(gin.Recovery())
 

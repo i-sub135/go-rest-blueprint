@@ -13,14 +13,14 @@ type response struct {
 	Message    *string   `json:"message,omitempty"`
 	Time       time.Time `json:"timestamp"`
 	AppVersion string    `json:"app_version"`
-	Data       *any      `json:"data,omitempty"`
+	Data       any       `json:"data,omitempty"`
 }
 
 var (
 	cfg = config.GetConfig()
 )
 
-func HttpRespOK(c *gin.Context, data *any, msg *string) {
+func HttpRespOK(c *gin.Context, data any, msg *string) {
 	c.JSON(http.StatusOK, response{
 		Status:     http.StatusText(http.StatusOK),
 		Time:       time.Now(),
@@ -38,7 +38,7 @@ func HttpRespNotFound(c *gin.Context, msg *string) {
 	})
 }
 
-func HttpRespBadRequest(c *gin.Context, msg *string, err *error) {
+func HttpRespBadRequest(c *gin.Context, msg *string) {
 	c.JSON(http.StatusBadRequest, response{
 		Status:     http.StatusText(http.StatusBadRequest),
 		Message:    msg,
@@ -47,7 +47,7 @@ func HttpRespBadRequest(c *gin.Context, msg *string, err *error) {
 	})
 }
 
-func HttpRespBadGateway(c *gin.Context, msg *string, err *error) {
+func HttpRespBadGateway(c *gin.Context, msg *string) {
 	c.JSON(http.StatusBadGateway, response{
 		Status:     http.StatusText(http.StatusBadGateway),
 		Message:    msg,
