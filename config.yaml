@@ -1,6 +1,6 @@
 app:
   name: "github.com/i-sub135/go-rest-blueprint"
-  mode: release
+  mode: debug
   port: 8999
 db:
   dsn: host=localhost user=tracking_user password=tracking_pass dbname=go_blueprint port=5432 sslmode=disable TimeZone=Asia/Jakarta

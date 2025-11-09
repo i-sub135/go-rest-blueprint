@@ -24,6 +24,8 @@ A modern, production-ready REST API blueprint built with Go, featuring clean arc
 ├── config.yaml                 # Configuration file
 ├── version                     # Version file (auto-read)
 ├── go.mod                      # Go module dependencies
+├── playground/                 # Database migration and utility scripts
+│   └── migrate_user.go         # User table migration with sample data
 │
 ├── source/
 │   ├── config/                 # Configuration management
@@ -33,17 +35,18 @@ A modern, production-ready REST API blueprint built with Go, featuring clean arc
 │   ├── feature/               # Business features (1 endpoint = 1 feature)
 │   │   ├── public/            # External-facing features
 │   │   │   ├── healtcheck/    # Health check endpoints
-│   │   │   ├── user_create/   # POST /users endpoint
-│   │   │   ├── user_update/   # PUT /users/:id endpoint
+│   │   │   ├── get_user/      # GET /users/:id endpoint
 │   │   │   └── ...            # Other public endpoints
 │   │   ├── private/           # Internal business logic features
 │   │   └── doc.go             # Feature architecture documentation
 │   │
 │   ├── common/                # Shared resources across features
 │   │   ├── model/             # Shared GORM models and entities
+│   │   │   └── user_model/    # User domain model
 │   │   ├── repository/        # Shared repository implementations
+│   │   │   └── user_repo/     # User repository with CRUD operations
 │   │   └── utils/             # Common utility functions and helpers
-│   │       └── http_resp_utils/  # HTTP response utilities
+│   │       └── http_resp_utils/ # HTTP response utilities
 │   │
 │   ├── pkg/                   # Infrastructure packages
 │   │   ├── db/                # Database connection & management
@@ -65,11 +68,12 @@ A modern, production-ready REST API blueprint built with Go, featuring clean arc
 Each endpoint is treated as a complete, isolated feature:
 
 ```
-feature/public/user_create/     # POST /users endpoint
+feature/public/get_user/        # GET /users/:id endpoint
 ├── model.go                    # Request/Response models specific to this endpoint
 ├── repository.go               # Repository interface contract
 ├── repository_impl.go          # Repository implementation
 ├── handler.go                  # HTTP handler logic
+├── handler_impl.go            # Handler implementation
 └── utils.go                    # Utilities specific to this feature
 ```
 
@@ -88,22 +92,23 @@ feature/public/user_create/     # POST /users endpoint
 ### Example Implementation
 
 ```go
-// feature/public/user_create/repository.go
+// feature/public/get_user/repository.go
 type Repository interface {
-    // Shared methods
-    Create(ctx context.Context, user *commonmodel.User) error
+    // Shared methods from common repo
+    GetByID(ctx context.Context, id uint) (*usermodel.User, error)
     
-    // Feature-specific methods
-    ValidateEmailUnique(ctx context.Context, email string) error
+    // Feature-specific methods for get_user
+    ValidateUserAccess(ctx context.Context, userID uint) error
+    LogUserAccess(ctx context.Context, userID uint) error
 }
 
-// feature/public/user_create/repository_impl.go
+// feature/public/get_user/repository_impl.go
 type repositoryImpl struct {
-    *commonrepository.UserRepo // Embedded shared repo
+    *userrepo.UserRepo // Embedded shared repo
 }
 
 // Duck typing automatically satisfies the interface
-func NewRepository(userRepo *commonrepository.UserRepo) Repository {
+func NewRepository(userRepo *userrepo.UserRepo) Repository {
     return &repositoryImpl{UserRepo: userRepo}
 }
 ```
@@ -144,7 +149,13 @@ func NewRepository(userRepo *commonrepository.UserRepo) Repository {
    export DB_DSN="host=localhost user=your_user password=your_pass dbname=your_db port=5432 sslmode=disable"
    ```
 
-4. **Run the application**
+4. **Run database migration**
+   ```bash
+   # Migrate tables and insert sample data
+   go run playground/migrate_user.go
+   ```
+
+5. **Run the application**
    ```bash
    go run main.go
    ```
@@ -214,8 +225,11 @@ The application includes comprehensive health monitoring:
 ### Health Check
 - `GET /health` - Application and database health status
 
+### User Management
+- `GET /api/v1/users/:id` - Get user by ID
+
 ### API Routes
-- `GET /api/v1/...` - API endpoints (mounted via router system)
+- `GET /api/v1/...` - Additional API endpoints (mounted via router system)
 
 ## 🧪 Testing
 
@@ -245,6 +259,15 @@ go test -v ./...
 - Repository interface compliance
 
 ## 🚦 Development Workflow
+
+### Database Migration
+
+Run database migration and seed sample data:
+
+```bash
+# Migrate user table and insert 100 sample users
+go run playground/migrate_user.go
+```
 
 ### Adding New Features
 
@@ -294,11 +317,11 @@ Move components to `common/` when:
 
 ```go
 // Feature-specific imports
-import "github.com/i-sub135/go-rest-blueprint/source/feature/public/user_create"
+import "github.com/i-sub135/go-rest-blueprint/source/feature/public/get_user"
 
 // Common imports
-import "github.com/i-sub135/go-rest-blueprint/source/common/model"
-import "github.com/i-sub135/go-rest-blueprint/source/common/repository"
+import "github.com/i-sub135/go-rest-blueprint/source/common/model/user_model"
+import "github.com/i-sub135/go-rest-blueprint/source/common/repository/user_repo"
 import "github.com/i-sub135/go-rest-blueprint/source/common/utils/http_resp_utils"
 ```
 

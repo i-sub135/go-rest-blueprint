@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/i-sub135/go-rest-blueprint/source/config"
+	"github.com/i-sub135/go-rest-blueprint/source/service/constant"
 	"github.com/rs/zerolog"
 )
 
@@ -72,6 +73,7 @@ func GinZLogger() gin.HandlerFunc {
 		ev.Str("method", method).
 			Str("path", path).
 			Str("client_ip", ip).
+			Str(constant.RequestIDKey, c.GetString(constant.RequestIDKey)).
 			Int("status", status).
 			Dur("latency", dur).
 			Msg("http request")
