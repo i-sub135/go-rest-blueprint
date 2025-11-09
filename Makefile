@@ -2,8 +2,9 @@
 
 BINARY_NAME=go-blueprint
 MAIN_PATH=./main.go
+VERSION=$(shell cat version)
 
-.PHONY: deps build run dev
+.PHONY: deps build run dev tag
 
 # Load dependencies and tidy modules
 deps:
@@ -25,3 +26,10 @@ run:
 dev:
 	@echo "Starting hot reload..."
 	find . -name "*.go" | entr -r go run $(MAIN_PATH)
+
+# Create git tag from version file
+tag:
+	@echo "Creating git tag v$(VERSION)..."
+	git tag v$(VERSION)
+	git push origin v$(VERSION)
+	@echo "Tag v$(VERSION) created and pushed"
