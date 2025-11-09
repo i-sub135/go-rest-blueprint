@@ -9,7 +9,7 @@ func (h *Handler) HealtCheck(c *gin.Context) {
 
 	if err := checkConnection(h.db, c.Request.Context()); err != nil {
 		errMsg := err.Error()
-		httpresputils.HttpRespBadGateway(c, &errMsg, nil)
+		httpresputils.HttpRespBadGateway(c, &errMsg)
 		return
 	}
 
