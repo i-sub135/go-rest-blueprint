@@ -1,30 +1,19 @@
 package healtcheck
 
 import (
-	"net/http"
-	"time"
-
 	"github.com/gin-gonic/gin"
-	"github.com/i-sub135/go-rest-blueprint/source/config"
+	httpresputils "github.com/i-sub135/go-rest-blueprint/source/service/share/glob_utils/http_resp_utils"
 )
 
 func (h *Handler) HealtCheck(c *gin.Context) {
 
-	now := time.Now()
 	if err := checkConnection(h.db, c.Request.Context()); err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{
-			"status":  "FAIL",
-			"error":   err.Error(),
-			"version": config.GetConfig().App.Version,
-			"time":    now,
-		})
+		errMsg := err.Error()
+		httpresputils.HttpRespBadGateway(c, &errMsg, nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status":    "OK",
-		"message":   "Database connection healthy",
-		"version":   config.GetConfig().App.Version,
-		"timestamp": now,
-	})
+	msg := "db connect ok"
+	httpresputils.HttpRespOK(c, nil, &msg)
+
 }
