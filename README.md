@@ -21,11 +21,14 @@ A modern, production-ready REST API blueprint built with Go, featuring clean arc
 
 ```
 ├── main.go                     # Application entry point
-├── config.yaml                 # Configuration file
+├── config.yaml                 # Configuration file  
 ├── version                     # Version file (auto-read)
 ├── go.mod                      # Go module dependencies
+├── Makefile                    # Build automation (deps, build, run, dev, tag)
+│
 ├── playground/                 # Database migration and utility scripts
-│   └── migrate_user.go         # User table migration with sample data
+│   ├── user/migrate_user.go    # User table migration with 100 sample users
+│   └── customer/migrate_customers.go # Customer migration with 50 Indonesian customers
 │
 ├── source/
 │   ├── config/                 # Configuration management
@@ -34,84 +37,133 @@ A modern, production-ready REST API blueprint built with Go, featuring clean arc
 │   │
 │   ├── feature/               # Business features (1 endpoint = 1 feature)
 │   │   ├── public/            # External-facing features
-│   │   │   ├── healtcheck/    # Health check endpoints
-│   │   │   ├── get_user/      # GET /users/:id endpoint
-│   │   │   └── ...            # Other public endpoints
-│   │   ├── private/           # Internal business logic features
-│   │   └── doc.go             # Feature architecture documentation
+│   │   │   ├── healtcheck/    # GET /health endpoint
+│   │   │   ├── get_all_user/  # GET /users endpoint 
+│   │   │   ├── get_user_by_id/ # GET /users/:id endpoint
+│   │   │   └── get_user_email/ # GET /users/email endpoint (advanced)
+│   │   └── private/           # Internal business logic features
 │   │
 │   ├── common/                # Shared resources across features
 │   │   ├── model/             # Shared GORM models and entities
-│   │   │   └── user_model/    # User domain model
+│   │   │   ├── user_model/    # User entity (name, email, timestamps)
+│   │   │   └── customer_model/ # Customer entity (detailed personal info)
 │   │   ├── repository/        # Shared repository implementations
-│   │   │   └── user_repo/     # User repository with CRUD operations
-│   │   └── utils/             # Common utility functions and helpers
-│   │       └── http_resp_utils/ # HTTP response utilities
+│   │   │   ├── user_repo/     # User CRUD operations
+│   │   │   └── customer_repo/ # Customer operations with name queries
+│   │   └── glob_utils/        # Common utility functions
+│   │       └── http_resp_utils/ # Standardized HTTP JSON responses
 │   │
 │   ├── pkg/                   # Infrastructure packages
-│   │   ├── db/                # Database connection & management
-│   │   └── logger/            # Structured logging utilities
+│   │   ├── db/                # PostgreSQL connection with GORM
+│   │   └── logger/            # Zerolog structured logging
 │   │
 │   └── service/               # Infrastructure services
 │       ├── route.go           # Route mounting and organization
-│       ├── middleware/        # Custom middleware
-│       └── constant/          # Application constants
+│       ├── middleware/        # Request ID generation and tracking
+│       └── constant/          # Application constants (headers, keys)
 │
 └── test/                      # Test files
-    └── source/config/         # Configuration tests
+    └── source/config/         # Configuration loading tests
 ```
 
-## 🏗️ Architecture Principles
+## 🏗️ Modular Architecture
 
-### Feature Isolation Pattern
+### Feature-Based Design Pattern
 
-Each endpoint is treated as a complete, isolated feature:
+This project uses **Feature Isolation Pattern** where each endpoint is an isolated and self-contained feature:
 
+#### **1. Feature Structure**
 ```
-feature/public/get_user/        # GET /users/:id endpoint
-├── model.go                    # Request/Response models specific to this endpoint
-├── repository.go               # Repository interface contract
-├── repository_impl.go          # Repository implementation
-├── handler.go                  # HTTP handler logic
-├── handler_impl.go            # Handler implementation
-└── utils.go                    # Utilities specific to this feature
+feature/public/get_user_email/     # GET /api/v1/users/email
+├── handler.go                     # Handler constructor (returns gin.HandlerFunc)
+├── handler_impl.go                # HTTP request/response logic
+├── repository.go                  # Interface contract for repository
+└── repository_impl.go             # Feature-specific repository methods
 ```
 
-**Key Principles:**
-- **1 Endpoint = 1 Feature = 1 Folder** - Complete isolation
-- **Self-Contained** - Everything needed for the endpoint exists in the feature folder
-- **Shared When Needed** - Only move to `common/` when used by multiple features
-
-### Duck Typing & Repository Pattern
-
-- **Interface Contracts** - Each feature defines its own repository interface
-- **Shared Implementation** - Common repository implementations in `common/repository/`
-- **Duck Typing** - Go's interface satisfaction enables flexible dependency injection
-- **Minimal Exposure** - Features only see the methods they need
-
-### Example Implementation
-
+#### **2. Repository Composition Pattern**
 ```go
-// feature/public/get_user/repository.go
-type Repository interface {
-    // Shared methods from common repo
-    GetByID(ctx context.Context, id uint) (*usermodel.User, error)
-    
-    // Feature-specific methods for get_user
-    ValidateUserAccess(ctx context.Context, userID uint) error
-    LogUserAccess(ctx context.Context, userID uint) error
-}
-
-// feature/public/get_user/repository_impl.go
+// Multiple Repository Injection
 type repositoryImpl struct {
-    *userrepo.UserRepo // Embedded shared repo
+    *userrepo.UserRepo         // Embedded user repository
+    *customerrepo.CustomerRepo // Embedded customer repository
 }
 
-// Duck typing automatically satisfies the interface
-func NewRepository(userRepo *userrepo.UserRepo) Repository {
-    return &repositoryImpl{UserRepo: userRepo}
+// Duck Typing Interface Satisfaction
+type Repositories interface {
+    GetByEmail(ctx, email) (*User, error)           // from UserRepo
+    GetCustomerFirstName(ctx, name) (*[]Customer, error) // from CustomerRepo
+    // Feature-specific methods can be added in repository_impl.go
 }
 ```
+
+#### **3. Handler Factory Pattern** 
+```go
+// Clean handler construction without .Impl syntax
+func NewHandler(userRepo *userrepo.UserRepo, customerRepo *customerrepo.CustomerRepo) gin.HandlerFunc {
+    repo := injectRepository(userRepo, customerRepo)
+    handler := Handler{repo: repo}
+    return handler.Impl
+}
+
+// Route mounting
+userRoute.GET("/email", get_user_email.NewHandler(userRepo, custRepo))
+```
+
+#### **4. Smart Email Processing**
+The `get_user_email` feature includes logic to extract first name from email:
+```
+Input:  "James.Martinez762@outlook.com"
+Process: Split email → Extract "James" → Query customers with first_name="James"
+Output: User data + matching customers
+```
+
+### Common Resources Management
+
+#### **Shared Models**
+- `user_model/` - User entity with GORM soft delete
+- `customer_model/` - Customer entity with personal details (FirstName, LastName, Phone, Address, etc.)
+
+#### **Shared Repositories** 
+- `user_repo/` - Complete CRUD operations for User
+- `customer_repo/` - Customer operations with specialized queries
+
+#### **HTTP Response Utilities**
+- Centralized JSON response formatting with app version and timestamp
+- Standardized error handling for Bad Request, Bad Gateway, Not Found
+
+### Infrastructure Layer
+
+#### **Configuration (Koanf v2)**
+- YAML file + Environment variable overrides
+- Automatic version file reading
+- Type-safe configuration structs
+
+#### **Logging (Zerolog)**
+- Structured JSON logging with caller information
+- Gin middleware integration with request ID tracking
+- Performance optimized with configurable output
+
+#### **Database (GORM + PostgreSQL)**
+- Connection pooling with timeout handling
+- Auto-migration support
+- Health check with connection testing
+
+#### **Middleware Stack**
+- Request ID generation (crypto/rand based)
+- HTTP request logging with latency tracking
+- Recovery middleware for panic handling
+
+### Migration & Development Tools
+
+#### **Playground Scripts**
+- `playground/user/migrate_user.go` - 100 sample users generation
+- `playground/customer/migrate_customers.go` - 50 sample customers with Indonesian data
+
+#### **Development Workflow**
+- Hot reload with `make dev` (entr-based)
+- Clean build with `make build`
+- Version tagging with `make tag`
 
 ## 🛠️ Technology Stack
 
@@ -226,10 +278,30 @@ The application includes comprehensive health monitoring:
 - `GET /health` - Application and database health status
 
 ### User Management
-- `GET /api/v1/users/:id` - Get user by ID
+- `GET /api/v1/users` - Get all users (direct handler function)
+- `GET /api/v1/users/:id` - Get user by ID with access logging
+- `GET /api/v1/users/email?email={email}&customer_name={name}` - Get user by email + related customers
 
-### API Routes
-- `GET /api/v1/...` - Additional API endpoints (mounted via router system)
+### Advanced Features
+
+#### Email-Based Customer Lookup
+```bash
+# Extract first name from email and find matching customers
+curl "localhost:8999/api/v1/users/email?email=James.Martinez762@outlook.com"
+
+# Response includes both user data and customers with first_name="James"
+{
+  "status": "OK",
+  "data": {
+    "user": { "name": "James Martinez", "email": "james@example.com" },
+    "customers": [
+      { "first_name": "James", "last_name": "Smith", "city": "Jakarta" }
+    ]
+  },
+  "timestamp": "2025-11-10T10:30:00+07:00",
+  "app_version": "1.0.1-beta"
+}
+```
 
 ## 🧪 Testing
 
@@ -266,7 +338,10 @@ Run database migration and seed sample data:
 
 ```bash
 # Migrate user table and insert 100 sample users
-go run playground/migrate_user.go
+go run playground/user/migrate_user.go
+
+# Migrate customer table and insert 50 sample customers with Indonesian data
+go run playground/customer/migrate_customers.go
 ```
 
 ### Adding New Features
