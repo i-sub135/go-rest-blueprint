@@ -30,8 +30,8 @@ func (r *Routers) MountRouters(routeGroup *gin.RouterGroup) {
 	userRoute := routeGroup.Group("/users")
 
 	// userRoute.Use(middleware) uncommand for use middleware
-	userRoute.GET("", get_all_user.NewHandler(userRepo).Impl)
-	userRoute.GET("/:id", get_user_by_id.NewHandler(userRepo).Impl)
-	userRoute.GET("/email", get_user_email.NewHandler(userRepo, custRepo).Impl)
+	userRoute.GET("", get_all_user.NewHandler(userRepo))
+	userRoute.GET("/:id", get_user_by_id.NewHandler(userRepo))
+	userRoute.GET("/email", get_user_email.NewHandler(userRepo, custRepo))
 
 }
