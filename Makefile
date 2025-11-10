@@ -33,3 +33,9 @@ tag:
 	git tag v$(VERSION)
 	git push origin v$(VERSION)
 	@echo "Tag v$(VERSION) created and pushed"
+
+tag-latest:
+	@echo "Creating git tag v$(VERSION)..."
+	git tag latest
+	git push origin latest
+	@echo "Tag latest created and pushed"
