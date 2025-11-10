@@ -1,4 +1,4 @@
-package getalluser
+package get_all_user
 
 import (
 	"github.com/gin-gonic/gin"

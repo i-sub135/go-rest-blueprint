@@ -1,4 +1,4 @@
-package get_all_user
+package get_user_by_id
 
 import (
 	"github.com/gin-gonic/gin"
@@ -11,6 +11,6 @@ type Handler struct {
 
 func NewHandler(userRepo *userrepo.UserRepo) gin.HandlerFunc {
 	repo := injectRepository(userRepo)
-	handler := &Handler{repo: repo}
+	handler := Handler{repo: repo}
 	return handler.Impl
 }

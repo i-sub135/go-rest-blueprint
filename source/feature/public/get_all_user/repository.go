@@ -1,4 +1,4 @@
-package getalluser
+package get_all_user
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	userrepo "github.com/i-sub135/go-rest-blueprint/source/common/repository/user_repo"
 )
 
-type UserRepositories interface {
+type Repositories interface {
 	// common repo implement
 	GetAll(ctx context.Context) (*[]usermodel.User, error)
 	/**
@@ -22,7 +22,7 @@ type repositoryImpl struct {
 	*userrepo.UserRepo // Embedded shared repo
 }
 
-func injectRepository(userRepo *userrepo.UserRepo) UserRepositories {
+func injectRepository(userRepo *userrepo.UserRepo) Repositories {
 	return &repositoryImpl{
 		UserRepo: userRepo,
 	}

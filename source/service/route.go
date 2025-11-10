@@ -1,11 +1,14 @@
 package service
 
 import (
-	getalluser "github.com/i-sub135/go-rest-blueprint/source/feature/public/get_all_user"
+	"github.com/i-sub135/go-rest-blueprint/source/feature/public/get_all_user"
+	"github.com/i-sub135/go-rest-blueprint/source/feature/public/get_user_by_id"
+	"github.com/i-sub135/go-rest-blueprint/source/feature/public/get_user_email"
 
 	"github.com/gin-gonic/gin"
+	customerrepo "github.com/i-sub135/go-rest-blueprint/source/common/repository/customer_repo"
 	userrepo "github.com/i-sub135/go-rest-blueprint/source/common/repository/user_repo"
-	getuser "github.com/i-sub135/go-rest-blueprint/source/feature/public/get_user"
+
 	"gorm.io/gorm"
 )
 
@@ -23,10 +26,12 @@ func (r *Routers) MountRouters(routeGroup *gin.RouterGroup) {
 
 	// endpoint group user
 	userRepo := userrepo.NewUserRepo(r.db)
-	userRoute := routeGroup.Group("/user")
+	custRepo := customerrepo.NewRepo(r.db)
+	userRoute := routeGroup.Group("/users")
 
 	// userRoute.Use(middleware) uncommand for use middleware
-	userRoute.GET("", getalluser.NewHandler(userRepo).Impl)
-	userRoute.GET("/:id", getuser.NewHandler(userRepo).Impl)
+	userRoute.GET("", get_all_user.NewHandler(userRepo))
+	userRoute.GET("/:id", get_user_by_id.NewHandler(userRepo))
+	userRoute.GET("/email", get_user_email.NewHandler(userRepo, custRepo))
 
 }
