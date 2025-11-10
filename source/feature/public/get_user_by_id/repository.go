@@ -1,4 +1,4 @@
-package getuser
+package get_user_by_id
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	userrepo "github.com/i-sub135/go-rest-blueprint/source/common/repository/user_repo"
 )
 
-type UserRepositories interface {
+type Repositories interface {
 	// common repo implement
 	GetByID(ctx context.Context, id uint) (*usermodel.User, error)
 
@@ -19,7 +19,7 @@ type repositoryImpl struct {
 	*userrepo.UserRepo // Embedded shared repo
 }
 
-func injectRepository(userRepo *userrepo.UserRepo) UserRepositories {
+func injectRepository(userRepo *userrepo.UserRepo) Repositories {
 	return &repositoryImpl{
 		UserRepo: userRepo,
 	}

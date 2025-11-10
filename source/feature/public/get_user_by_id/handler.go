@@ -1,11 +1,11 @@
-package getuser
+package get_user_by_id
 
 import (
 	userrepo "github.com/i-sub135/go-rest-blueprint/source/common/repository/user_repo"
 )
 
 type Handler struct {
-	repo UserRepositories
+	repo Repositories
 }
 
 func NewHandler(userRepo *userrepo.UserRepo) *Handler {

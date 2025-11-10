@@ -1,9 +1,9 @@
-package getalluser
+package get_all_user
 
 import userrepo "github.com/i-sub135/go-rest-blueprint/source/common/repository/user_repo"
 
 type Handler struct {
-	repo UserRepositories
+	repo Repositories
 }
 
 func NewHandler(userRepo *userrepo.UserRepo) *Handler {
